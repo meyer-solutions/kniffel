@@ -222,6 +222,12 @@
 ```
 <div class="game-container">
     <div class="dice-section">
+        <div class="player-names" style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center;">
+            <input type="text" id="player1Name" placeholder="Spieler 1" style="padding: 8px; font-size: 16px; border: 2px solid #4CAF50; border-radius: 5px; width: 120px;" onchange="updatePlayerNames()">
+            <span style="font-size: 18px;">vs</span>
+            <input type="text" id="player2Name" placeholder="Spieler 2" style="padding: 8px; font-size: 16px; border: 2px solid #4CAF50; border-radius: 5px; width: 120px;" onchange="updatePlayerNames()">
+        </div>
+        
         <div class="current-player" id="currentPlayer">Spieler 1 ist am Zug</div>
         <div class="roll-count" id="rollCount">Wurf: 0 von 3</div>
         
@@ -231,7 +237,6 @@
         
         <div class="controls">
             <button id="rollButton" onclick="rollDice()">Würfeln</button>
-            <button id="newGameButton" onclick="newGame()">Neues Spiel</button>
         </div>
         
         <div class="info">
@@ -245,8 +250,8 @@
             <thead>
                 <tr>
                     <th>Kategorie</th>
-                    <th>Spieler 1</th>
-                    <th>Spieler 2</th>
+                    <th id="player1Header">Spieler 1</th>
+                    <th id="player2Header">Spieler 2</th>
                 </tr>
             </thead>
             <tbody id="scorecardBody">
@@ -254,6 +259,10 @@
             </tbody>
         </table>
     </div>
+</div>
+
+<div style="margin-top: 30px; text-align: center;">
+    <button id="newGameButton" onclick="newGame()" style="padding: 15px 30px; font-size: 20px; background-color: #ff5722;">Neues Spiel</button>
 </div>
 
 <script>
@@ -278,6 +287,27 @@
         5: '⚄',
         6: '⚅'
     };
+    
+    // Spielernamen
+    let playerNames = {
+        player1: 'Spieler 1',
+        player2: 'Spieler 2'
+    };
+    
+    function updatePlayerNames() {
+        const p1Name = document.getElementById('player1Name').value || 'Spieler 1';
+        const p2Name = document.getElementById('player2Name').value || 'Spieler 2';
+        
+        playerNames.player1 = p1Name;
+        playerNames.player2 = p2Name;
+        
+        // Update headers
+        document.getElementById('player1Header').textContent = p1Name;
+        document.getElementById('player2Header').textContent = p2Name;
+        
+        // Update current player display
+        document.getElementById('currentPlayer').textContent = `${currentPlayer === 1 ? playerNames.player1 : playerNames.player2} ist am Zug`;
+    }
     
     // Spielstand
     const scores = {
@@ -477,7 +507,7 @@
         
         // Switch player
         currentPlayer = currentPlayer === 1 ? 2 : 1;
-        document.getElementById('currentPlayer').textContent = `Spieler ${currentPlayer} ist am Zug`;
+        document.getElementById('currentPlayer').textContent = `${currentPlayer === 1 ? playerNames.player1 : playerNames.player2} ist am Zug`;
         
         // Reset for new turn
         rollCount = 0;
@@ -515,9 +545,9 @@
         
         let winner = '';
         if (p1Total > p2Total) {
-            winner = 'Spieler 1 gewinnt!';
+            winner = `${playerNames.player1} gewinnt!`;
         } else if (p2Total > p1Total) {
-            winner = 'Spieler 2 gewinnt!';
+            winner = `${playerNames.player2} gewinnt!`;
         } else {
             winner = 'Unentschieden!';
         }
@@ -582,8 +612,9 @@
         initializeScorecard();
         updateDisplay();
         updateRollCount();
+        updatePlayerNames();
         document.getElementById('rollButton').disabled = false;
-        document.getElementById('currentPlayer').textContent = 'Spieler 1 ist am Zug';
+        document.getElementById('currentPlayer').textContent = `${playerNames.player1} ist am Zug`;
     }
     
     // Initialisierung
