@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kniffel Würfel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+```
+    h1 {
+        color: #333;
+        margin-bottom: 20px;
+    }
+    
+    .game-container {
+        display: flex;
+        gap: 30px;
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .dice-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .current-player {
+        font-size: 24px;
+        color: #4CAF50;
+        margin-bottom: 15px;
+        font-weight: bold;
+    }
+    
+    .dice-container {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .die {
+        width: 80px;
+        height: 80px;
+        background-color: white;
+        border: 2px solid #333;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 80px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .die:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .die.locked {
+        background-color: #ffeb3b;
+        border-color: #f57c00;
+    }
+    
+    .die.locked::after {
+        content: "🔒";
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        font-size: 20px;
+    }
+    
+    .controls {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    button {
+        padding: 12px 24px;
+        font-size: 18px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    
+    button:hover {
+        background-color: #45a049;
+    }
+    
+    button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+    
+    .info {
+        text-align: center;
+        color: #666;
+        margin-top: 10px;
+        font-size: 14px;
+    }
+    
+    .roll-count {
+        font-size: 20px;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    @keyframes roll {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .rolling {
+        animation: roll 0.5s ease-in-out;
+    }
+    
+    /* Kniffelblock Styles */
+    .scorecard-section {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow-x: auto;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+    
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+    
+    th {
+        background-color: #4CAF50;
+        color: white;
+        font-weight: bold;
+    }
+    
+    tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    
+    .category-name {
+        text-align: left;
+        font-weight: bold;
+    }
+    
+    .score-button {
+        padding: 5px 10px;
+        margin: 2px;
+        background-color: #e3f2fd;
+        border: 1px solid #2196F3;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .score-button:hover {
+        background-color: #bbdefb;
+    }
+    
+    .score-button:disabled {
+        background-color: #f0f0f0;
+        border-color: #ccc;
+        cursor: not-allowed;
+        color: #666;
+    }
+    
+    .score-entered {
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .bonus-row, .total-row {
+        background-color: #fffde7;
+        font-weight: bold;
+    }
+    
+    .grand-total-row {
+        background-color: #c8e6c9;
+        font-weight: bold;
+        font-size: 16px;
+    }
+    
+    .possible-score {
+        color: #2196F3;
+        font-weight: bold;
+    }
+</style>
+```
+
+</head>
+<body>
+    <h1>Kniffel für 2 Spieler</h1>
+
+```
+<div class="game-container">
+    <div class="dice-section">
+        <div class="current-player" id="currentPlayer">Spieler 1 ist am Zug</div>
+        <div class="roll-count" id="rollCount">Wurf: 0 von 3</div>
+        
+        <div class="dice-container" id="diceContainer">
+            <!-- Würfel werden hier dynamisch erstellt -->
+        </div>
+        
+        <div class="controls">
+            <button id="rollButton" onclick="rollDice()">Würfeln</button>
+            <button id="newGameButton" onclick="newGame()">Neues Spiel</button>
+        </div>
+        
+        <div class="info">
+            <p>Klicke auf einen Würfel, um ihn zu behalten oder freizugeben.</p>
+            <p>Nach 3 Würfen musst du eine Kategorie wählen.</p>
+        </div>
+    </div>
+    
+    <div class="scorecard-section">
+        <table id="scorecard">
+            <thead>
+                <tr>
+                    <th>Kategorie</th>
+                    <th>Spieler 1</th>
+                    <th>Spieler 2</th>
+                </tr>
+            </thead>
+            <tbody id="scorecardBody">
+                <!-- Kategorien werden hier dynamisch erstellt -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let dice = [
+        { value: 1, locked: false },
+        { value: 1, locked: false },
+        { value: 1, locked: false },
+        { value: 1, locked: false },
+        { value: 1, locked: false }
+    ];
+    
+    let rollCount = 0;
+    const maxRolls = 3;
+    let currentPlayer = 1;
+    
+    // Würfel-Punkte-Muster für die Anzeige
+    const dicePatterns = {
+        1: '⚀',
+        2: '⚁',
+        3: '⚂',
+        4: '⚃',
+        5: '⚄',
+        6: '⚅'
+    };
+    
+    // Spielstand
+    const scores = {
+        player1: {},
+        player2: {}
+    };
+    
+    // Kategorien
+    const categories = [
+        { id: 'ones', name: '1er', calculate: () => sumOfValue(1) },
+        { id: 'twos', name: '2er', calculate: () => sumOfValue(2) },
+        { id: 'threes', name: '3er', calculate: () => sumOfValue(3) },
+        { id: 'fours', name: '4er', calculate: () => sumOfValue(4) },
+        { id: 'fives', name: '5er', calculate: () => sumOfValue(5) },
+        { id: 'sixes', name: '6er', calculate: () => sumOfValue(6) },
+        { id: 'upperBonus', name: 'Bonus (≥63)', calculate: () => 0, special: true },
+        { id: 'upperTotal', name: 'Oberer Teil', calculate: () => 0, special: true },
+        { id: 'threeOfKind', name: 'Dreierpasch', calculate: () => hasOfKind(3) ? sumAll() : 0 },
+        { id: 'fourOfKind', name: 'Viererpasch', calculate: () => hasOfKind(4) ? sumAll() : 0 },
+        { id: 'fullHouse', name: 'Full House', calculate: () => isFullHouse() ? 25 : 0 },
+        { id: 'smallStraight', name: 'Kleine Straße', calculate: () => hasStraight(4) ? 30 : 0 },
+        { id: 'largeStraight', name: 'Große Straße', calculate: () => hasStraight(5) ? 40 : 0 },
+        { id: 'kniffel', name: 'Kniffel', calculate: () => hasOfKind(5) ? 50 : 0 },
+        { id: 'chance', name: 'Chance', calculate: () => sumAll() },
+        { id: 'lowerTotal', name: 'Unterer Teil', calculate: () => 0, special: true },
+        { id: 'grandTotal', name: 'Gesamtpunkte', calculate: () => 0, special: true }
+    ];
+    
+    function initializeDice() {
+        const container = document.getElementById('diceContainer');
+        container.innerHTML = '';
+        
+        dice.forEach((die, index) => {
+            const dieElement = document.createElement('div');
+            dieElement.className = 'die';
+            dieElement.onclick = () => toggleLock(index);
+            dieElement.id = `die-${index}`;
+            container.appendChild(dieElement);
+        });
+        
+        updateDisplay();
+    }
+    
+    function initializeScorecard() {
+        const tbody = document.getElementById('scorecardBody');
+        tbody.innerHTML = '';
+        
+        categories.forEach(category => {
+            const row = document.createElement('tr');
+            if (category.id === 'upperBonus' || category.id === 'upperTotal') {
+                row.className = 'bonus-row';
+            } else if (category.id === 'lowerTotal') {
+                row.className = 'total-row';
+            } else if (category.id === 'grandTotal') {
+                row.className = 'grand-total-row';
+            }
+            
+            row.innerHTML = `
+                <td class="category-name">${category.name}</td>
+                <td id="p1-${category.id}">
+                    ${!category.special ? `<button class="score-button" onclick="selectScore(1, '${category.id}')" disabled>-</button>` : '-'}
+                </td>
+                <td id="p2-${category.id}">
+                    ${!category.special ? `<button class="score-button" onclick="selectScore(2, '${category.id}')" disabled>-</button>` : '-'}
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+    
+    function rollDice() {
+        if (rollCount >= maxRolls) return;
+        
+        rollCount++;
+        updateRollCount();
+        
+        dice.forEach((die, index) => {
+            if (!die.locked) {
+                const dieElement = document.getElementById(`die-${index}`);
+                dieElement.classList.add('rolling');
+                
+                setTimeout(() => {
+                    die.value = Math.floor(Math.random() * 6) + 1;
+                    dieElement.classList.remove('rolling');
+                    updateDisplay();
+                    updatePossibleScores();
+                }, 500);
+            }
+        });
+        
+        if (rollCount >= maxRolls) {
+            document.getElementById('rollButton').disabled = true;
+        }
+    }
+    
+    function toggleLock(index) {
+        if (rollCount === 0) return;
+        
+        dice[index].locked = !dice[index].locked;
+        updateDisplay();
+    }
+    
+    function updateDisplay() {
+        dice.forEach((die, index) => {
+            const dieElement = document.getElementById(`die-${index}`);
+            dieElement.textContent = dicePatterns[die.value];
+            
+            if (die.locked) {
+                dieElement.classList.add('locked');
+            } else {
+                dieElement.classList.remove('locked');
+            }
+        });
+    }
+    
+    function updateRollCount() {
+        document.getElementById('rollCount').textContent = `Wurf: ${rollCount} von ${maxRolls}`;
+    }
+    
+    function updatePossibleScores() {
+        if (rollCount === 0) return;
+        
+        const playerKey = currentPlayer === 1 ? 'player1' : 'player2';
+        
+        categories.forEach(category => {
+            if (!category.special && !(category.id in scores[playerKey])) {
+                const score = category.calculate();
+                const button = document.querySelector(`#p${currentPlayer}-${category.id} button`);
+                if (button) {
+                    button.textContent = score;
+                    button.disabled = false;
+                    button.classList.add('possible-score');
+                }
+            }
+        });
+    }
+    
+    function selectScore(player, categoryId) {
+        if (player !== currentPlayer || rollCount === 0) return;
+        
+        const playerKey = player === 1 ? 'player1' : 'player2';
+        const category = categories.find(c => c.id === categoryId);
+        const score = category.calculate();
+        
+        scores[playerKey][categoryId] = score;
+        
+        // Update display
+        const cell = document.getElementById(`p${player}-${categoryId}`);
+        cell.innerHTML = `<span class="score-entered">${score}</span>`;
+        
+        // Calculate totals
+        updateTotals(player);
+        
+        // Next turn
+        nextTurn();
+    }
+    
+    function updateTotals(player) {
+        const playerKey = player === 1 ? 'player1' : 'player2';
+        
+        // Upper section total
+        let upperTotal = 0;
+        ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes'].forEach(id => {
+            if (id in scores[playerKey]) {
+                upperTotal += scores[playerKey][id];
+            }
+        });
+        
+        // Bonus
+        const bonus = upperTotal >= 63 ? 35 : 0;
+        document.getElementById(`p${player}-upperBonus`).innerHTML = bonus > 0 ? `<span class="score-entered">${bonus}</span>` : '-';
+        
+        // Upper total with bonus
+        const upperTotalWithBonus = upperTotal + bonus;
+        document.getElementById(`p${player}-upperTotal`).innerHTML = `<span class="score-entered">${upperTotalWithBonus}</span>`;
+        
+        // Lower section total
+        let lowerTotal = 0;
+        ['threeOfKind', 'fourOfKind', 'fullHouse', 'smallStraight', 'largeStraight', 'kniffel', 'chance'].forEach(id => {
+            if (id in scores[playerKey]) {
+                lowerTotal += scores[playerKey][id];
+            }
+        });
+        document.getElementById(`p${player}-lowerTotal`).innerHTML = `<span class="score-entered">${lowerTotal}</span>`;
+        
+        // Grand total
+        const grandTotal = upperTotalWithBonus + lowerTotal;
+        document.getElementById(`p${player}-grandTotal`).innerHTML = `<span class="score-entered">${grandTotal}</span>`;
+    }
+    
+    function nextTurn() {
+        // Check if game is over
+        if (isGameOver()) {
+            endGame();
+            return;
+        }
+        
+        // Switch player
+        currentPlayer = currentPlayer === 1 ? 2 : 1;
+        document.getElementById('currentPlayer').textContent = `Spieler ${currentPlayer} ist am Zug`;
+        
+        // Reset for new turn
+        rollCount = 0;
+        dice.forEach(die => {
+            die.locked = false;
+        });
+        updateDisplay();
+        updateRollCount();
+        document.getElementById('rollButton').disabled = false;
+        
+        // Clear possible scores
+        clearPossibleScores();
+    }
+    
+    function clearPossibleScores() {
+        document.querySelectorAll('.score-button').forEach(button => {
+            if (!button.parentElement.querySelector('.score-entered')) {
+                button.textContent = '-';
+                button.disabled = true;
+                button.classList.remove('possible-score');
+            }
+        });
+    }
+    
+    function isGameOver() {
+        const allCategories = categories.filter(c => !c.special);
+        return allCategories.every(c => 
+            c.id in scores.player1 && c.id in scores.player2
+        );
+    }
+    
+    function endGame() {
+        const p1Total = parseInt(document.querySelector('#p1-grandTotal .score-entered').textContent);
+        const p2Total = parseInt(document.querySelector('#p2-grandTotal .score-entered').textContent);
+        
+        let winner = '';
+        if (p1Total > p2Total) {
+            winner = 'Spieler 1 gewinnt!';
+        } else if (p2Total > p1Total) {
+            winner = 'Spieler 2 gewinnt!';
+        } else {
+            winner = 'Unentschieden!';
+        }
+        
+        document.getElementById('currentPlayer').textContent = `Spiel beendet! ${winner}`;
+        document.getElementById('rollButton').disabled = true;
+    }
+    
+    // Helper functions for scoring
+    function sumOfValue(value) {
+        return dice.filter(die => die.value === value).length * value;
+    }
+    
+    function sumAll() {
+        return dice.reduce((sum, die) => sum + die.value, 0);
+    }
+    
+    function hasOfKind(count) {
+        const counts = {};
+        dice.forEach(die => {
+            counts[die.value] = (counts[die.value] || 0) + 1;
+        });
+        return Object.values(counts).some(c => c >= count);
+    }
+    
+    function isFullHouse() {
+        const counts = {};
+        dice.forEach(die => {
+            counts[die.value] = (counts[die.value] || 0) + 1;
+        });
+        const values = Object.values(counts).sort();
+        return values.length === 2 && values[0] === 2 && values[1] === 3;
+    }
+    
+    function hasStraight(length) {
+        const values = [...new Set(dice.map(d => d.value))].sort((a, b) => a - b);
+        
+        for (let i = 0; i <= values.length - length; i++) {
+            let isConsecutive = true;
+            for (let j = 1; j < length; j++) {
+                if (values[i + j] !== values[i] + j) {
+                    isConsecutive = false;
+                    break;
+                }
+            }
+            if (isConsecutive) return true;
+        }
+        return false;
+    }
+    
+    function newGame() {
+        // Reset everything
+        scores.player1 = {};
+        scores.player2 = {};
+        currentPlayer = 1;
+        rollCount = 0;
+        dice.forEach(die => {
+            die.value = 1;
+            die.locked = false;
+        });
+        
+        initializeScorecard();
+        updateDisplay();
+        updateRollCount();
+        document.getElementById('rollButton').disabled = false;
+        document.getElementById('currentPlayer').textContent = 'Spieler 1 ist am Zug';
+    }
+    
+    // Initialisierung
+    initializeDice();
+    initializeScorecard();
+</script>
+```
+
+</body>
+</html>
